@@ -42,26 +42,57 @@
       "age": 21
     };
 
+    const alan = {
+      "firstName": "Alan",
+      "lastName": "Turing",
+      "age": 42
+    };
+
     (async function () {
 
+      //window.client = new threads.Client({host:'http://54.167.224.121:6007'})
       window.client = new threads.Client()
       try {
         // Create a new store
         const res = await client.newStore()
         const storeID = res.id
+        const modelName = "Person"
+        console.debug(`storeID: ${storeID}`)
 
         // Register a person schema
-        await client.registerSchema(storeID, 'Person', personSchema)
+        await client.registerSchema(storeID, modelName, personSchema)
+
+        // Get invitation links
+        await client.start(storeID)
+        const invitationLinks = await client.getStoreLink(storeID)
+        for (let link of invitationLinks) {
+            console.debug(`address: ${link.address}, followKey: ${link.followKey}, readKey: ${link.readKey}`)
+        }
 
         // Create adam and eve
-        const people = await client.modelCreate(storeID, 'Person', [adam, eve])
+        let people = await client.modelCreate(storeID, modelName, [adam, eve])
         const adamID = people.entitiesList[0].ID
         const eveID = people.entitiesList[1].ID
-        console.debug('adam:', adamID)
-        console.debug('eve:', eveID)
+        console.debug(`adam: ${adamID}`)
+        console.debug(`eve: ${eveID}`)
+        console.debug(`Entities: ${JSON.stringify(people)}`)
+        console.debug(`Entity list: ${JSON.stringify(people.entitiesList)}`)
+        for (let entity of people.entitiesList) {
+            console.debug(`Entity ID: ${entity.ID}`)
+        }
+
+        // Add alan
+        people = await client.modelSave(storeID, modelName, [alan])
+        //const alanID = people.entitiesList[2].ID
+        //console.debug(`alan: ${alanID}`)
+        console.debug(`Entities: ${JSON.stringify(people)}`)
+        console.debug(`Entity list: ${JSON.stringify(people.entitiesList)}`)
+        for (let entity of people.entitiesList) {
+            console.debug(`Entity ID: ${entity.ID}`)
+        }
 
         // Subscribe to adam
-        await client.listen(storeID, 'Person', adamID, ((reply) => {
+        await client.listen(storeID, modelName, adamID, ((reply) => {
           console.debug(reply)
         }))
       }
